@@ -4,10 +4,57 @@ from models import db, NetworkDevice, NetworkEvent, NetworkInterface, BillingRec
 from datetime import datetime, timedelta
 from sqlalchemy import func, desc
 import logging
+import platform
+import socket
+import subprocess
 
 logger = logging.getLogger(__name__)
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
+
+
+def _normalize_device_target(target):
+    """Validate that the user is adding one host, not a network range."""
+    target = (target or '').strip()
+    if not target:
+        return None, 'IP address or hostname is required'
+
+    if '/' in target:
+        return None, 'Add one device at a time. Network ranges are not supported here.'
+
+    return target, None
+
+
+def _ping_target(target, timeout_ms=2000):
+    """Ping a single target in a cross-platform way."""
+    is_windows = platform.system().lower().startswith('win')
+
+    if is_windows:
+        command = ['ping', '-n', '1', '-w', str(timeout_ms), target]
+    else:
+        timeout_seconds = max(1, int(round(timeout_ms / 1000)))
+        command = ['ping', '-c', '1', '-W', str(timeout_seconds), target]
+
+    try:
+        completed = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            timeout=max(5, int(timeout_ms / 1000) + 3)
+        )
+        return completed.returncode == 0, completed.stdout or completed.stderr or ''
+    except subprocess.TimeoutExpired:
+        return False, 'Ping timed out'
+    except FileNotFoundError:
+        return False, 'Ping command not available'
+
+
+def _resolve_hostname(target):
+    """Best-effort reverse DNS lookup after a successful ping."""
+    try:
+        return socket.gethostbyaddr(target)[0]
+    except Exception:
+        return ''
 
 # ==================== DEVICE ENDPOINTS ====================
 
@@ -41,37 +88,78 @@ def get_devices():
 def add_device():
     """Add a new network device"""
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         
         # Validate required fields
-        if not data.get('ip_address') or not data.get('device_type'):
+        target, target_error = _normalize_device_target(data.get('ip_address') or data.get('target'))
+        if target_error:
+            return jsonify({'success': False, 'error': target_error}), 400
+
+        if not data.get('device_type'):
             return jsonify({'success': False, 'error': 'Missing required fields'}), 400
         
         # Check if device already exists
-        existing = NetworkDevice.query.filter_by(ip_address=data['ip_address']).first()
+        existing = NetworkDevice.query.filter_by(ip_address=target).first()
         if existing:
             return jsonify({'success': False, 'error': 'Device already exists'}), 409
+
+        reachable, _ = _ping_target(target)
+        hostname = data.get('hostname', '').strip()
+        if not hostname and reachable:
+            hostname = _resolve_hostname(target)
         
         # Create new device
         device = NetworkDevice(
-            ip_address=data['ip_address'],
-            hostname=data.get('hostname', ''),
-            device_type=data['device_type'],
+            ip_address=target,
+            hostname=hostname,
+            device_type=data.get('device_type', 'other'),
             location=data.get('location', ''),
             snmp_community=data.get('snmp_community', 'public'),
             snmp_version=data.get('snmp_version', '2c'),
             port=data.get('port', 161),
-            enabled=data.get('enabled', True)
+            enabled=data.get('enabled', True),
+            status='up' if reachable else 'down',
+            last_seen=datetime.utcnow() if reachable else None
         )
         
         db.session.add(device)
         db.session.commit()
         
-        logger.info(f"Device added: {device.ip_address}")
+        logger.info(f"Device added: {device.ip_address} (reachable={reachable})")
         return jsonify({'success': True, 'data': device.to_dict()}), 201
     except Exception as e:
         db.session.rollback()
         logger.error(f"Error adding device: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@api_bp.route('/devices/probe', methods=['POST'])
+def probe_device():
+    """Probe a single device target before adding it."""
+    try:
+        data = request.get_json(silent=True) or {}
+        target, target_error = _normalize_device_target(data.get('ip_address') or data.get('target'))
+        if target_error:
+            return jsonify({'success': False, 'error': target_error}), 400
+
+        snmp_version = data.get('snmp_version', '2c')
+        reachable, ping_output = _ping_target(target)
+        hostname = _resolve_hostname(target) if reachable else ''
+
+        return jsonify({
+            'success': True,
+            'data': {
+                'target': target,
+                'reachable': reachable,
+                'status': 'up' if reachable else 'down',
+                'hostname': hostname,
+                'snmp_version': snmp_version,
+                'snmp_mode': 'SNMP v2c' if snmp_version == '2c' else snmp_version,
+                'ping_output': ping_output.strip()
+            }
+        })
+    except Exception as e:
+        logger.error(f"Error probing device: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @api_bp.route('/devices/<int:device_id>', methods=['GET'])

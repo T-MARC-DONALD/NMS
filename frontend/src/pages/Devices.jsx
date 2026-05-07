@@ -15,6 +15,7 @@ export default function Devices() {
     device_type: 'router',
     location: '',
     snmp_community: 'public',
+    snmp_version: '2c',
     port: 161
   });
   const navigate = useNavigate();
@@ -47,6 +48,7 @@ export default function Devices() {
         device_type: 'router',
         location: '',
         snmp_community: 'public',
+        snmp_version: '2c',
         port: 161
       });
       setShowForm(false);
@@ -87,11 +89,15 @@ export default function Devices() {
       {showForm && (
         <div className="card mb-6">
           <h3 className="text-lg font-semibold mb-4">Add New Device</h3>
+          <p className="text-sm text-gray-600 mb-4">
+            The system pings the target first and stores one device at a time.
+            SNMP defaults to v2c.
+          </p>
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <input
                 type="text"
-                placeholder="IP Address"
+                placeholder="IP Address or Hostname"
                 value={formData.ip_address}
                 onChange={(e) => setFormData({...formData, ip_address: e.target.value})}
                 className="border rounded px-3 py-2"
@@ -130,6 +136,14 @@ export default function Devices() {
                 onChange={(e) => setFormData({...formData, snmp_community: e.target.value})}
                 className="border rounded px-3 py-2"
               />
+              <select
+                value={formData.snmp_version}
+                onChange={(e) => setFormData({...formData, snmp_version: e.target.value})}
+                className="border rounded px-3 py-2"
+              >
+                <option value="2c">SNMP v2c</option>
+                <option value="1">SNMP v1</option>
+              </select>
               <input
                 type="number"
                 placeholder="SNMP Port"

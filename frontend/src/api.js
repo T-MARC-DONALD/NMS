@@ -17,6 +17,8 @@ export const deviceAPI = {
   
   getById: (id) => api.get(`/devices/${id}`),
   
+  probe: (data) => api.post('/devices/probe', data),
+
   create: (data) => api.post('/devices', data),
   
   update: (id, data) => api.put(`/devices/${id}`, data),
