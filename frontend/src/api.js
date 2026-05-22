@@ -9,9 +9,10 @@ const api = axios.create({
 
 // Device API
 export const deviceAPI = {
-  getAll: (page = 1, perPage = 10, status = null) => {
+  getAll: (page = 1, perPage = 10, status = null, query = '') => {
     const params = { page, per_page: perPage };
     if (status) params.status = status;
+    if (query) params.q = query;
     return api.get('/devices', { params });
   },
   
@@ -39,8 +40,11 @@ export const eventAPI = {
 // Statistics API
 export const statsAPI = {
   getSummary: () => api.get('/stats/summary'),
-  
-  getEventsBySeverity: () => api.get('/stats/events-by-severity')
+  getEventsBySeverity: () => api.get('/stats/events-by-severity'),
+  getOverview: () => api.get('/monitoring/overview'),
+  getTopology: () => api.get('/monitoring/topology'),
+  getSensors: (deviceId = null) => api.get('/monitoring/sensors', { params: deviceId ? { device_id: deviceId } : {} }),
+  getReports: (days = 7) => api.get('/monitoring/reports', { params: { days } })
 };
 
 // Health check

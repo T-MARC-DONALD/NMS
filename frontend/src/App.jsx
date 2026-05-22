@@ -13,7 +13,6 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check backend connection
     const checkConnection = async () => {
       try {
         await healthCheck();
@@ -27,16 +26,16 @@ function App() {
     };
 
     checkConnection();
-    const interval = setInterval(checkConnection, 30000); // Check every 30 seconds
+    const interval = setInterval(checkConnection, 30000);
     return () => clearInterval(interval);
   }, []);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-100">
+      <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_#1e293b,_#020617_60%)] text-white">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">Loading NMS...</p>
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-b-2 border-emerald-400"></div>
+          <p className="mt-4 text-slate-300">Loading monitoring console...</p>
         </div>
       </div>
     );
@@ -44,12 +43,12 @@ function App() {
 
   if (!connected) {
     return (
-      <div className="flex items-center justify-center h-screen bg-red-50">
-        <div className="text-center">
-          <div className="text-6xl mb-4">⚠️</div>
-          <h1 className="text-3xl font-bold text-red-600 mb-2">Connection Error</h1>
-          <p className="text-gray-600 mb-4">Cannot connect to backend server at http://localhost:5000</p>
-          <p className="text-sm text-gray-500">Make sure the backend is running with: <code className="bg-gray-100 px-2 py-1">python app.py</code></p>
+      <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_#7f1d1d,_#020617_60%)] text-white">
+        <div className="max-w-xl rounded-3xl border border-white/10 bg-white/5 p-8 text-center shadow-2xl backdrop-blur">
+          <div className="mb-4 text-5xl">Network core offline</div>
+          <h1 className="mb-2 text-3xl font-black">Connection Error</h1>
+          <p className="mb-4 text-slate-300">Cannot connect to backend server at http://localhost:5000.</p>
+          <p className="text-sm text-slate-400">Start the backend with python app.py and reload the page.</p>
         </div>
       </div>
     );
@@ -57,45 +56,33 @@ function App() {
 
   return (
     <Router>
-      <div className="min-h-screen bg-gray-100">
-        {/* Header */}
-        <header className="bg-white shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex items-center justify-between">
-              <h1 className="text-3xl font-bold text-gray-900">NMS - Network Management System</h1>
-              <div className="flex items-center gap-2">
-                <div className={`w-3 h-3 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                <span className="text-sm text-gray-600">{connected ? 'Connected' : 'Disconnected'}</span>
-              </div>
+      <div className="min-h-screen bg-[linear-gradient(180deg,_#e2e8f0_0%,_#f8fafc_35%,_#eff6ff_100%)] text-slate-900">
+        <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-slate-950/95 text-white backdrop-blur">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+            <div>
+              <div className="text-xs uppercase tracking-[0.32em] text-emerald-300">PRTG Network Monitor</div>
+              <h1 className="mt-1 text-2xl font-black tracking-tight">Network Management System</h1>
+            </div>
+            <div className="flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-4 py-2">
+              <div className={`h-3 w-3 rounded-full ${connected ? 'bg-emerald-400' : 'bg-rose-500'}`}></div>
+              <span className="text-sm text-slate-200">{connected ? 'Connected' : 'Disconnected'}</span>
             </div>
           </div>
         </header>
 
-        {/* Navigation */}
-        <nav className="bg-white border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex gap-8">
-              <Link to="/" className="px-4 py-3 text-sm font-medium text-gray-700 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-600">
-                Dashboard
-              </Link>
-              <Link to="/devices" className="px-4 py-3 text-sm font-medium text-gray-700 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-600">
-                Devices
-              </Link>
-              <Link to="/events" className="px-4 py-3 text-sm font-medium text-gray-700 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-600">
-                Events
-              </Link>
-              <Link to="/discovery" className="px-4 py-3 text-sm font-medium text-gray-700 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-600">
-                Discovery
-              </Link>
-              <Link to="/billing" className="px-4 py-3 text-sm font-medium text-gray-700 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-600">
-                Billing
-              </Link>
+        <nav className="border-b border-slate-200 bg-white/80 backdrop-blur">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-wrap gap-2 py-3 text-sm font-semibold">
+              <Link to="/" className="rounded-full px-4 py-2 text-slate-700 hover:bg-slate-900 hover:text-white">Dashboard</Link>
+              <Link to="/devices" className="rounded-full px-4 py-2 text-slate-700 hover:bg-slate-900 hover:text-white">Devices</Link>
+              <Link to="/events" className="rounded-full px-4 py-2 text-slate-700 hover:bg-slate-900 hover:text-white">Events</Link>
+              <Link to="/discovery" className="rounded-full px-4 py-2 text-slate-700 hover:bg-slate-900 hover:text-white">Discovery</Link>
+              <Link to="/billing" className="rounded-full px-4 py-2 text-slate-700 hover:bg-slate-900 hover:text-white">Reports</Link>
             </div>
           </div>
         </nav>
 
-        {/* Main Content */}
-        <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/devices" element={<Devices />} />

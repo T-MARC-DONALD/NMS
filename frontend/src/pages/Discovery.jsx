@@ -59,8 +59,13 @@ export default function Discovery() {
   };
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-6">Add Device</h2>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-3xl font-black text-slate-950">Auto Discovery</h2>
+        <p className="mt-2 max-w-3xl text-sm text-slate-600">
+          Probe one target at a time, detect reachability, and seed a sensor set that matches the PRD-style onboarding flow.
+        </p>
+      </div>
 
       {error && (
         <div className="bg-red-100 text-red-800 p-4 rounded mb-4">{error}</div>
@@ -176,6 +181,10 @@ export default function Discovery() {
             Probe Result: {probeResult.target}
           </h3>
 
+          <div className="mb-4 rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
+            <span className="font-semibold text-slate-950">Discovery mode:</span> {probeResult.recommended_mode}
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-4">
             <div className="p-4 border rounded bg-gray-50">
               <p className="font-semibold">Reachability</p>
@@ -196,6 +205,23 @@ export default function Discovery() {
               <p className="capitalize">{probeResult.status}</p>
             </div>
           </div>
+
+          {probeResult.suggested_sensors?.length > 0 && (
+            <div className="mb-4">
+              <h4 className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Suggested sensors</h4>
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                {probeResult.suggested_sensors.map((sensor) => (
+                  <div key={`${sensor.name}-${sensor.type}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="font-semibold text-slate-950">{sensor.name}</div>
+                    <div className="mt-1 text-sm text-slate-600">{sensor.type}</div>
+                    <div className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${sensor.status === 'up' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                      {sensor.status}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <button
             onClick={() => handleAddDevice({

@@ -93,6 +93,7 @@ class SNMPCollector:
     def check_device_status(self, device):
         """Check if device is reachable via SNMP"""
         try:
+            previous_status = device.status
             result = self.get_snmp_data(
                 device.ip_address,
                 OID_SYSUPTIME,
@@ -107,7 +108,7 @@ class SNMPCollector:
                 logger.info(f"Device {device.ip_address} is UP")
                 
                 # Create event if device was previously down
-                if device.status != 'up':
+                if previous_status != 'up':
                     event = NetworkEvent(
                         device_id=device.id,
                         event_type='device_up',
@@ -122,7 +123,7 @@ class SNMPCollector:
                 logger.warning(f"Device {device.ip_address} is DOWN")
                 
                 # Create event if device was previously up
-                if device.status == 'up':
+                if previous_status == 'up':
                     event = NetworkEvent(
                         device_id=device.id,
                         event_type='device_down',
