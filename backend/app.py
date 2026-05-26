@@ -17,7 +17,16 @@ try:
     SNMP_AVAILABLE = True
 except ImportError as e:
     logger_temp = logging.getLogger(__name__)
-    logger_temp.warning(f"SNMP collector not available: {e}. Running without SNMP support.")
+    msg = str(e)
+    logger_temp = logging.getLogger(__name__)
+    if 'pyasn1' in msg or 'pysn1' in msg:
+        logger_temp.warning(
+            f"SNMP collector not available: {e}. "
+            "Install required SNMP dependencies (e.g. run: pip install -r backend/requirements.txt). "
+            "Running without SNMP support."
+        )
+    else:
+        logger_temp.warning(f"SNMP collector not available: {e}. Running without SNMP support.")
     SNMP_AVAILABLE = False
     SNMPCollector = None
 
